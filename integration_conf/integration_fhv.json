@@ -1,0 +1,51 @@
+{
+ "dispatching_base_num": [
+                          {
+                           "type": "column", 
+                           "content": "dispatching_base_num"
+                          }
+                         ],
+
+ "pickup_datetime": [
+                     {
+                      "type": "column", 
+                      "content": "pickup_datetime"
+                     },
+                     {
+                      "type": "column", 
+                      "content": "pickup_date"
+                     }
+                    ],
+
+ "dropoff_datetime": [
+                      {
+                       "type": "column", 
+                       "content": "dropoff_datetime"
+                      }
+                     ],
+
+ "pulocationid": [
+                  {
+                   "type": "column", 
+                   "content": "pulocationid"
+                  },
+                  {
+                   "type": "column", 
+                   "content": "locationid"
+                  }
+                 ],
+                 
+ "dolocationid": [
+                  {
+                   "type": "column", 
+                   "content": "dolocationid"
+                  }
+                 ],
+
+  "sr_flag": [
+              {
+               "type": "column",
+               "content": "sr_flag"
+              }
+             ]
+}

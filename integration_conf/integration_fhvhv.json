@@ -1,0 +1,50 @@
+{
+    "hvfhs_license_num": [
+                          {
+                           "type": "column", 
+                           "content": "hvfhs_license_num"
+                          }
+                         ],
+
+    "dispatching_base_num": [
+                             {
+                              "type": "column", 
+                              "content": "dispatching_base_num"
+                             }
+                            ],
+   
+    "pickup_datetime": [
+                        {
+                         "type": "column", 
+                         "content": "pickup_datetime"
+                        }
+                       ],
+   
+    "dropoff_datetime": [
+                         {
+                          "type": "column", 
+                          "content": "dropoff_datetime"
+                         }
+                        ],
+   
+    "pulocationid": [
+                     {
+                      "type": "column", 
+                      "content": "pulocationid"
+                     }
+                    ],
+                    
+    "dolocationid": [
+                     {
+                      "type": "column", 
+                      "content": "dolocationid"
+                     }
+                    ],
+   
+     "sr_flag": [
+                 {
+                  "type": "column",
+                  "content": "sr_flag"
+                 }
+                ]
+   }

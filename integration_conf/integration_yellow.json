@@ -1,0 +1,203 @@
+{ 
+ "vendorid": [
+              {
+               "type": "column", 
+               "content": "vendorid"
+              },
+              {
+               "type": "column",
+               "content": "vendor_id"
+              }
+             ],
+
+ "tpep_pickup_datetime": [
+                          {
+                           "type": "column", 
+                           "content": "tpep_pickup_datetime"
+                          },
+                          {
+                           "type": "column", 
+                           "content": "pickup_datetime"
+                          },
+                          {
+                           "type": "column", 
+                           "content": "trip_pickup_datetime"
+                          }
+                         ],
+
+ "tpep_dropoff_datetime": [
+                           {
+                            "type": "column", 
+                            "content": "tpep_dropoff_datetime"
+                           },
+                           {
+                            "type": "column", 
+                            "content": "dropoff_datetime"
+                           },
+                           {
+                            "type": "column", 
+                            "content": "trip_dropoff_datetime"
+                           }
+                          ],
+
+ "passenger_count": [
+                     {
+                      "type": "column", 
+                      "content": "passenger_count"
+                     }
+                    ], 
+
+ "trip_distance": [
+                   {
+                    "type": "column", 
+                    "content": "trip_distance"
+                   }
+                  ],
+                  
+ "ratecodeid": [
+                {
+                 "type": "column", 
+                 "content": "ratecodeid"
+                },
+                {
+                 "type": "column", 
+                 "content": "rate_code"
+                }
+               ],
+
+ "store_and_fwd_flag": [
+                        {
+                         "type": "column", 
+                         "content": "store_and_fwd_flag"
+                        },
+                        {
+                         "type": "column", 
+                         "content": "store_and_forward"
+                        }
+                       ],
+
+ "pulocationid": [
+                  {
+                   "type": "column", 
+                   "content": "pulocationid"
+                  },
+                  {
+                   "type": "function",
+                   "content": {
+                               "func_name": "compute_location_id",
+                               "params": ["pickup_longitude", "pickup_latitude"]
+                              }
+                  },
+                  {
+                   "type": "function",
+                   "content": {
+                               "func_name": "compute_location_id",
+                               "params": ["start_lon", "start_lat"]
+                              }
+                  }
+                 ], 
+     
+ "dolocationid": [
+                  {
+                   "type": "column", 
+                   "content": "dolocationid"
+                  },
+                  {
+                   "type": "function",
+                   "content": {
+                               "func_name": "compute_location_id",
+                               "params": ["dropoff_longitude", "dropoff_latitude"]
+                              }
+                  },
+                  {
+                    "type": "function",
+                    "content": {
+                                "func_name": "compute_location_id",
+                                "params": ["end_lon", "end_lat"]
+                               }
+                  }
+                 ],
+
+ "payment_type":  [
+                   {
+                    "type": "column", 
+                    "content": "payment_type"
+                   }
+                  ],
+
+ "fare_amount": [
+                 {
+                  "type": "column", 
+                  "content": "fare_amount"
+                 },
+                 {
+                  "type": "column", 
+                  "content": "fare_amt"
+                 }
+                ],
+                
+ "extra": [
+           {
+            "type": "column", 
+            "content": "extra"
+           }
+          ],
+        
+ "mta_tax":[
+            {
+             "type": "column", 
+             "content": "mta_max"
+            }
+           ],  
+        
+ "tip_amount": [
+                {
+                 "type": "column", 
+                 "content": "tip_amount"
+                },
+                {
+                 "type": "column", 
+                 "content": "tip_amt"
+                }
+               ],
+        
+ "tolls_amount": [
+                  {
+                   "type": "column", 
+                   "content": "tolls_amount"
+                  },
+                  {
+                   "type": "column", 
+                   "content": "tolls_amt"
+                  }
+                 ], 
+
+ "improvement_surcharge": [
+                           {
+                            "type": "column", 
+                            "content": "improvement_surcharge"
+                           },
+                           {
+                            "type": "column", 
+                            "content": "surcharge"
+                           }
+                          ], 
+
+ "total_amount": [
+                  {
+                   "type": "column", 
+                   "content": "total_amount"
+                  },
+                  {
+                   "type": "column", 
+                   "content": "total_amt"
+                  }
+                 ],
+                 
+ "congestion_surcharge": [
+                          {
+                           "type": "column", 
+                           "content": "congestion_surcharge"
+                          }
+                         ]
+}
