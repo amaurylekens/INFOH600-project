@@ -1,93 +1,10 @@
-import os
 import sys
-import csv
 import glob
 
-import pandas as pd
 from pandas_schema import Column, Schema
 import pandas_schema.validation as validation 
 from pyspark import SparkConf, SparkContext, SparkFiles
 
-
-def read_rows(filename):
-
-    """
-    Read a .csv file aand return a list of 
-    rows with the schema and the filename
-
-    :param filename: the path of a .csv file with the rows 
-    :return: list of dict - schema: column names of the files
-                          - data: entries of the row
-                          - filename: name of the file 
-    """
-
-    f = open(filename, 'r')
-    rows = []
-
-    # read schema (first line of the file)
-    schema = f.readline()
-    data = f.readline()
-
-    while data:
-        rows.append({'schema': schema, 
-                     'data': data, 
-                     'filename': filename})
-        data = f.readline()
-
-    return rows
-
-def validate_row(row, validation_schema):
-    
-    """
-    Validate the entries of the row with
-    the schema
-
-    :param row: dict {'schema': ..., 'data': ..., 
-                      'filename': ...}
-    :param validation_schema: schema to validate the data 
-    :return: a tuple (filename, {'data': [], 
-                                 'validated': bool})
-    """
-    
-    # split and clean the string to a list
-    data = row['data'].replace('\n', '').split(',')
-    schema = row['schema'].replace('\n', '').lower().split(',')
-
-    # validate the data
-    df = pd.DataFrame([data], columns=schema)
-    errors = validation_schema.validate(df)
-    
-    if errors == []:
-        validated = True   
-    else:
-        validated = False
-
-    validated_row = {'data': data,
-                     'schema': schema,
-                     'validated': validated}
-
-    return (row['filename'], [validated_row])
-
-
-def save_validated_rows(rows):
-
-    """
-    Write a list of rows in the specified file
-
-    :param rows: tuple (filename, [*rows])
-    """
-
-    filename = os.path.basename(rows[0])
-    f = open('./data/test-data/cleaned/{}'.format(filename), 'w')
-    with f:
-        writer = csv.writer(f)
-
-        schema = rows[1][0]['schema']
-        writer.writerow(schema)
-        for row in rows[1]:
-            if row['validated']:
-                writer.writerow(row['data'])
-    
 
 # validation schema for fhv dataset
 schema_fhv = Schema([
@@ -266,23 +183,23 @@ schemas = {'fhv' : schema_fhv,
            'yellow': schema_yellow}
 
 
+# spark configuration
 sc = SparkContext()
-sc.addFile("./transformations.py")
-sys.path.insert(0,SparkFiles.getRootDirectory())
 
-dataset = "fhv"
 # read all the filenames of the dataset
-filenames = sorted(glob.glob("./data/test-data/integrated/{}_*.csv".format(dataset)))
+filenames = sorted(glob.glob("./data/test-data/integrated/fhv_*.csv"))
 filenames = sc.parallelize(filenames)
 
-# recuperate the the shcema validation of the dataset
-validation_schema = schemas[dataset]
+# define path to save the file
+path = './data/cleaned'
 
 # launch spark job
-data = filenames.flatMap(lambda filename: read_rows(filename)) \
-                .map(lambda row: validate_row(row, validation_schema)) \
+data = filenames.flatMap(lambda filename: Row.read_rows(filename)) \
+                .map(lambda row: row.process()) \
+                .filter(lambda row: row.validate(schemas[row.dataset])) \
+                .filter(lambda row: (row.filename, row)) \
                 .reduceByKey(lambda row_1, row_2 : row_1 + row_2) \
-                .map(lambda rows: save_validated_rows(rows)) \
+                .map(lambda pair: Row.save_rows(pair[1], path)) \
                 .collect() 
 
          

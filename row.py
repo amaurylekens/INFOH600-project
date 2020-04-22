@@ -127,6 +127,24 @@ class Row():
 
         return self
 
+    def validate(validation_schema):
+    
+        """
+        Validate the entries of the row with
+        the schema
+ 
+        :param validation_schema: schema to validate the data 
+        :return: boolean, true if validated
+        """
+
+        # validate the data
+        df = pd.DataFrame([data], columns=schema)
+        errors = validation_schema.validate(df)
+        
+        validated = len(errors) == 0
+
+        return validated
+
 
     @staticmethod
     def read_rows(path):
