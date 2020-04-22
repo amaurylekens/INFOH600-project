@@ -1,6 +1,8 @@
 import os
 import csv
 
+import pandas as pd
+
 class Row():
     def __init__(self, schema, data, filename, dataset):
         self.schema = schema            # schema of the row
@@ -47,7 +49,7 @@ class Row():
         if not self.data_processed:
             if type(self.data) == str:
                 self.data = self.data.replace('\n', '')
-                self.data = self.data.lower().split(',')
+                self.data = self.data.split(',')
                 self.data_processed = True
 
         return self
@@ -97,7 +99,7 @@ class Row():
                         found = True
 
                 # the alias is a function with other column name as param
-                elif type == 'function':
+                elif category == 'function':
                     
                     func_name = content['func_name']
                     param_names = content['params']
@@ -127,7 +129,7 @@ class Row():
 
         return self
 
-    def validate(validation_schema):
+    def validate(self, validation_schema):
     
         """
         Validate the entries of the row with
@@ -138,7 +140,7 @@ class Row():
         """
 
         # validate the data
-        df = pd.DataFrame([data], columns=schema)
+        df = pd.DataFrame([self.data], columns=self.schema)
         errors = validation_schema.validate(df)
         
         validated = len(errors) == 0

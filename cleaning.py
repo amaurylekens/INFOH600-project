@@ -5,6 +5,8 @@ from pandas_schema import Column, Schema
 import pandas_schema.validation as validation 
 from pyspark import SparkConf, SparkContext, SparkFiles
 
+from row import Row
+
 
 # validation schema for fhv dataset
 schema_fhv = Schema([
@@ -178,7 +180,7 @@ schema_yellow = Schema([
 ])
 
 schemas = {'fhv' : schema_fhv,
-           'fhvhv': schema_fhvhv, 
+           'fhvhv': schema_fhvhv,
            'green': schema_green,
            'yellow': schema_yellow}
 
@@ -187,19 +189,27 @@ schemas = {'fhv' : schema_fhv,
 sc = SparkContext()
 
 # read all the filenames of the dataset
-filenames = sorted(glob.glob("./data/test-data/integrated/fhv_*.csv"))
+filenames = sorted(glob.glob("../data/integrated/fhv_*.csv"))
 filenames = sc.parallelize(filenames)
 
 # define path to save the file
-path = './data/cleaned'
+clean_path = '../data/clean'
+unclean_path = '../data/unclean'
 
 # launch spark job
-data = filenames.flatMap(lambda filename: Row.read_rows(filename)) \
-                .map(lambda row: row.process()) \
-                .filter(lambda row: row.validate(schemas[row.dataset])) \
-                .filter(lambda row: (row.filename, row)) \
-                .reduceByKey(lambda row_1, row_2 : row_1 + row_2) \
-                .map(lambda pair: Row.save_rows(pair[1], path)) \
-                .collect() 
+rows = filenames.flatMap(lambda filename: Row.read_rows(filename)) \
+                .map(lambda row: row.process()).persist() \
 
-         
+# filter unclean data
+rows.filter(lambda row: row.validate(schemas[row.dataset])) \
+    .map(lambda row: (row.filename, [row])) \
+    .reduceByKey(lambda row_1, row_2 : row_1 + row_2) \
+    .map(lambda pair: Row.save_rows(pair[1], clean_path)) \
+    .collect()
+
+# filter clean data
+rows.filter(lambda row: not row.validate(schemas[row.dataset])) \
+    .map(lambda row: (row.filename, [row])) \
+    .reduceByKey(lambda row_1, row_2 : row_1 + row_2) \
+    .map(lambda pair: Row.save_rows(pair[1], unclean_path)) \
+    .collect()

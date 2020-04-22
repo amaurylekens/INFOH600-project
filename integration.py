@@ -17,11 +17,11 @@ with open(filename, 'r') as f:
     integration_conf = json.load(f)
 
 # read all the filenames
-filenames = sorted(glob.glob("./data/test-data/fhv_*.csv"))
+filenames = sorted(glob.glob("../data/data/fhv_*.csv"))
 filenames = sc.parallelize(filenames)
 
 # define path to save the file
-path = './data/integrated'
+path = '../data/integrated'
 
 # launch spark job
 result = filenames.flatMap(lambda filename: Row.read_rows(filename)) \
