@@ -4,7 +4,7 @@ from shapely.geometry import Point
 
 def compute_location_id(long, lat):
     
-    zones = gpd.read_file('./data/shape_files/location.shp')
+    zones = gpd.read_file('./shape_files/taxi_zones.shp')
 
     pnt = Point(long, lat)
     

@@ -30,7 +30,8 @@ spark = SparkSession.builder \
 sc = spark.sparkContext
 sc.addFile("./transformations.py")
 sc.addFile("./row.py")
-sc.addFile("./shape/shape")
+sc.addFile("./shape_files/taxi_zones.shp")
+sc.addFile("./shape_files/taxi_zones.dbf")
 sys.path.insert(0,SparkFiles.getRootDirectory())
 
 # load integration configuration
