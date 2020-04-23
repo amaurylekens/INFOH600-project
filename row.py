@@ -149,43 +149,45 @@ class Row():
 
 
     @staticmethod
-    def read_rows(path):
+    def read_rows(file):
 
         """
-        Read a .csv file and make Row object
+        Construct row Objects from a tupple 
+        representing a file
 
         :param path: path of the file to read
         :return: a list of Row object
         """
 
+        path = file[0]
         filename = os.path.basename(path)
         dataset = filename.split('_', 1)[0]
-        f = open(path, 'r')
+        lines = file[1].split("\n")
         rows = []
 
         # read schema (first line of the file)
-        schema = f.readline()
-        data = f.readline()
+        schema = lines[0]
+        lines = lines[1:]
 
-        while data:
-            row = Row(schema, data, filename, dataset)
+        for line in lines:
+            row = Row(schema, line, filename, dataset)
             rows.append(row)
-            data = f.readline()
 
         return rows
 
     @staticmethod
-    def save_rows(rows, path):
+    def save_rows(rows, path, sc):
 
         """
         Write a list of rows in the specified file
 
         :param rows: list of Row object
         :param path: path to the .csv file to record the row
+        :param sc: spark context
         """
 
         filename = (rows[0].filename)
-        f = open('{}/{}'.format(path, filename), 'w')
+        f = open('./{}'.format(filename), 'w')
         with f:
             writer = csv.writer(f)
             schema = rows[0].schema
