@@ -3,15 +3,17 @@ import geopandas as gpd
 from shapely.geometry import Point
 
 def compute_location_id(long, lat):
-    
-    zones = gpd.read_file('./shape_files/taxi_zones.shp')
+     
+    zones = gpd.read_file('./location.shp')
 
     pnt = Point(long, lat)
     
     df = [[lid, pnt.within(geom)] 
           for lid, geom in zip(zones['location_i'],
                                zones['geometry'])]
+
     df = pd.DataFrame(df, columns = ['location_id' ,'is_in']) 
+    
     
     location = df.loc[df['is_in'] == True]['location_id']
 

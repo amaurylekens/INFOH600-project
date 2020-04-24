@@ -149,29 +149,29 @@ class Row():
 
 
     @staticmethod
-    def read_rows(file):
+    def read_rows(path):
 
         """
-        Construct row Objects from a tupple 
-        representing a file
+        Construct row Objects from a file
 
         :param path: path of the file to read
         :return: a list of Row object
         """
 
-        path = file[0]
         filename = os.path.basename(path)
         dataset = filename.split('_', 1)[0]
-        lines = file[1].split("\n")
+        
+        f = open(path, "r")
         rows = []
 
         # read schema (first line of the file)
-        schema = lines[0]
-        lines = lines[1:]
-
-        for line in lines:
+        schema = f.readline()
+        
+        line = f.readline()
+        while line:
             row = Row(schema, line, filename, dataset)
             rows.append(row)
+            f.readline()
 
         return rows
 

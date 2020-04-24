@@ -30,8 +30,9 @@ spark = SparkSession.builder \
 sc = spark.sparkContext
 sc.addFile("./transformations.py")
 sc.addFile("./row.py")
-sc.addFile("./shape_files/taxi_zones.shp")
-sc.addFile("./shape_files/taxi_zones.dbf")
+sc.addFile("./shape_files/location.shp")
+sc.addFile("./shape_files/location.dbf")
+sc.addFile("./shape_files/location.shx")
 sys.path.insert(0,SparkFiles.getRootDirectory())
 
 # load integration configuration
@@ -47,29 +48,30 @@ for conf_filename in conf_filenames:
 # define path to save the file
 input_path = './data'
 output_path = './integrated'
+  
+filenames = sorted(glob.glob("/home/hpda00034/infoh600/sampled/*.csv"))
 
-#filenames = sorted(glob.glob("/home/hpda00034/infoh600/sampled/fhv_*.csv"))
-filenames = ['fhv_tripdata_2015-06.csv']
 
 
 # launch spark job
-files = sc.wholeTextFiles(input_path)
-rowsRDD = files.flatMap(lambda file: Row.read_rows(file)) \
-               .map(lambda row: row.process()) \
-               .map(lambda row: row.integrate(integration_confs[row.dataset])) \
-               .persist()
 
-for filename in filenames :
-    rowsRDD.filter(lambda row : row.filename == filename) \
-           .map(lambda row: row.data) \
-           .coalesce(1) \
-           .saveAsTextFile("{}/{}".format(output_path, filename[:-4]))
-    
-    subprocess.call(['hadoop', 'fs', '-rm', '{}/{}'.format(output_path, filename)]) 
-    subprocess.call(['hadoop', 'fs', '-mv', '{}/{}/part-00000'.format(output_path, filename[:-4]), 
-                         '{}/{}'.format(output_path, filename)])
-    subprocess.call(['hadoop', 'fs', '-rm', '{}/{}/_SUCCESS'.format(output_path, filename[:-4])])
-    subprocess.call(['hadoop', 'fs', '-rmdir', '{}/{}'.format(output_path, filename[:-4])])
+#for i in range(10) :
+print(0)
+print(filenames[0])
+filename = filenames[0]
+rows = Row.read_rows(filename)
+rows = sc.parallelize(rows)
+rows.map(lambda row: row.process()) \
+    .map(lambda row: row.integrate(integration_confs[row.dataset])) \
+    .map(lambda row: row.data) \
+    .coalesce(1) \
+    .saveAsTextFile("{}/{}".format(output_path, filename[:-4]))
+
+subprocess.call(['hadoop', 'fs', '-rm', '{}/{}'.format(output_path, filename)]) 
+subprocess.call(['hadoop', 'fs', '-mv', '{}/{}/part-00000'.format(output_path, filename[:-4]), 
+                     '{}/{}'.format(output_path, filename)])
+subprocess.call(['hadoop', 'fs', '-rm', '{}/{}/_SUCCESS'.format(output_path, filename[:-4])])
+subprocess.call(['hadoop', 'fs', '-rmdir', '{}/{}'.format(output_path, filename[:-4])])
     
 
 try:
