@@ -178,38 +178,3 @@ schema_yellow = Schema([
            [validation.InRangeValidation(min=0)],
            allow_empty=True)
 ])
-
-schemas = {'fhv' : schema_fhv,
-           'fhvhv': schema_fhvhv,
-           'green': schema_green,
-           'yellow': schema_yellow}
-
-
-# spark configuration
-sc = SparkContext()
-
-# read all the filenames of the dataset
-filenames = sorted(glob.glob("../data/integrated/fhv_*.csv"))
-filenames = sc.parallelize(filenames)
-
-# define path to save the file
-clean_path = '../data/clean'
-unclean_path = '../data/unclean'
-
-# launch spark job
-rows = filenames.flatMap(lambda filename: Row.read_rows(filename)) \
-                .map(lambda row: row.process()).persist() \
-
-# filter unclean data
-rows.filter(lambda row: row.validate(schemas[row.dataset])) \
-    .map(lambda row: (row.filename, [row])) \
-    .reduceByKey(lambda row_1, row_2 : row_1 + row_2) \
-    .map(lambda pair: Row.save_rows(pair[1], clean_path)) \
-    .collect()
-
-# filter clean data
-rows.filter(lambda row: not row.validate(schemas[row.dataset])) \
-    .map(lambda row: (row.filename, [row])) \
-    .reduceByKey(lambda row_1, row_2 : row_1 + row_2) \
-    .map(lambda pair: Row.save_rows(pair[1], unclean_path)) \
-    .collect()

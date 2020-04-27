@@ -2,74 +2,35 @@ import os
 import csv
 
 import pandas as pd
+import geopandas as gpd
+from shapely.geometry import Point
+from pyspark import SparkFiles
+
 
 class Row():
-    def __init__(self, schema, data, filename, dataset):
-        self.schema = schema            # schema of the row
-        self.data = data                # entries of the row
-        self.filename = filename        # filename of the row
-        self.dataset = dataset          # dataset name of the row
-        self.schema_processed = False   # false if schema is not list         
-        self.data_processed = False     # false if data is not list
-       
-        if type(self.schema) == list:
-            self.schema_processed = True
+    @staticmethod
+    def validate(data, schema, validation_schema):
 
-        if type(self.data) == list:   
-            self.data_processed = True
+        """
+        Validate the entries of the row with
+        the validation schema
+
+        :param data: data to validate
+        :param schema: the csv schema of the data to validate
+        :param validation_schema: schema to validate the data 
+        :return: boolean, true if validated
+        """
+
+        # validate the data
+        df = pd.DataFrame([data], columns=schema)
+        errors = validation_schema.validate(df)
+
+        validated = len(errors) == 0
+
+        return validated
     
-    
-    def get(self, column):
-
-        """
-        Get the entry of a desired column 
-        of the row
-        
-        :param column: the name of the column
-        :return: the desired entry
-        """
-
-        i = self.schema.index(column)
-        return self.data[i]
-        
-
-    def process(self):
-
-        """
-        Process the schema and the data of the row 
-        if not already done
-        """
-
-        if not self.schema_processed:
-            if type(self.schema) == str:
-                self.schema = self.schema.replace('\n', '')
-                self.schema = self.schema.lower().split(',')
-                self.schema_processed = True
-
-        if not self.data_processed:
-            if type(self.data) == str:
-                self.data = self.data.replace('\n', '')
-                self.data = self.data.split(',')
-                self.data_processed = True
-
-        return self
-
-
-    def sum(self, columns):
-
-        """
-        Compute the sum of values of many columns 
-
-        :param columns: list of columns on which 
-                        the summation is performed  
-        :return: the sum of the values
-        """
-
-        return sum([float(self.get(column)) for column in columns
-                    if self.get(column) != ""])
-
-
-    def integrate(self, integration_conf):
+    @staticmethod
+    def integrate(data, schema, integration_conf, zones):
 
         """
         Transforms data into the desired schema 
@@ -78,7 +39,7 @@ class Row():
         :param integration_conf: dict with the configuration
         """
 
-        data = dict(zip(self.schema, self.data))
+        data = dict(zip(schema, data))
         t_data = dict() # transformed data
 
         # loop through all the columns of the last schema
@@ -97,10 +58,11 @@ class Row():
                     if content in list(data.keys()):
                         t_data[column] = data[content]
                         found = True
+                        break
 
                 # the alias is a function with other column name as param
                 elif category == 'function':
-                    
+
                     func_name = content['func_name']
                     param_names = content['params']
                     params = []
@@ -112,85 +74,73 @@ class Row():
                             eval_func = False
                         else:
                             params.append(data[param_name])
+                    
+                    # eval the function if all the params are there
+                    if eval_func and func_name == "compute_location_id" :
+                        not_valid = ["0", ""]
+                        if not(params[0] in not_valid or params[1] in not_valid):
+                            
+                            # recuperate params
+                            long = float(params[0])
+                            lat = float(params[1])
+                            
+                            rtree = zones.sindex
+                            # find possible match for the point
+                            pnt = Point(long,lat)
+                            possible_matches = list(rtree.intersection(pnt.bounds))
+                            t_data[column] = possible_matches
 
-                    # eval the function if all the params are there   
-                    if eval_func:
-                        import transformations as t
-                        eval_string = "t.{}({})".format(func_name, ','.join(map(str, params)))
-                        t_data[column] = exec(eval_string)
-                        found = True
+                            # find the right zone
+                            for m in possible_matches:
+                                if zones.iloc[m].geometry.contains(pnt):
+                                    t_data[column] = m+1
+                            found=True
 
             # if there is no valid alias add empty data
             if not found:
                 t_data[column] = ''
-            
-        self.data = list(t_data.values())
-        self.schema = list(t_data.keys())
 
-        return self
+        data = list(t_data.values())
 
-    def validate(self, validation_schema):
+        return data
     
-        """
-        Validate the entries of the row with
-        the schema
- 
-        :param validation_schema: schema to validate the data 
-        :return: boolean, true if validated
-        """
-
-        # validate the data
-        df = pd.DataFrame([self.data], columns=self.schema)
-        errors = validation_schema.validate(df)
+    @staticmethod
+    def process(data):
+    
+        data = data.replace('\n', '').replace('"','').replace("'", '')
+        data = data.split(',')
+        return data
+    
+    @staticmethod
+    def join(data):
         
-        validated = len(errors) == 0
-
-        return validated
+        data = ','.join([str(entry) for entry in data])
+        
+        return data
 
 
     @staticmethod
-    def read_rows(path):
+    def read_rows(lines, begin, latest, path):
 
         """
-        Construct row Objects from a file
+        Construct row Objects from a tuple
+        (path, (*rows))
 
-        :param path: path of the file to read
+        :param file: tuple (path, (*rows))
         :return: a list of Row object
         """
 
         filename = os.path.basename(path)
         dataset = filename.split('_', 1)[0]
-        
-        f = open(path, "r")
+
         rows = []
 
         # read schema (first line of the file)
-        schema = f.readline()
-        
-        line = f.readline()
-        while line:
+        schema = lines[0]
+        lines = lines[1:]
+
+        for line in lines[begin:latest]:
             row = Row(schema, line, filename, dataset)
             rows.append(row)
-            f.readline()
 
         return rows
-
-    @staticmethod
-    def save_rows(rows, path, sc):
-
-        """
-        Write a list of rows in the specified file
-
-        :param rows: list of Row object
-        :param path: path to the .csv file to record the row
-        :param sc: spark context
-        """
-
-        filename = (rows[0].filename)
-        f = open('./{}'.format(filename), 'w')
-        with f:
-            writer = csv.writer(f)
-            schema = rows[0].schema
-            writer.writerow(schema)
-            for row in rows:
-                writer.writerow(row.data)
