@@ -9,25 +9,22 @@ from pyspark import SparkFiles
 
 class Row():
     @staticmethod
-    def validate(data, schema, validation_schema):
+    def validate(df, validation_schema):
 
         """
-        Validate the entries of the row with
-        the validation schema
+        Validate the dataframe and return infos of the errors
 
-        :param data: data to validate
-        :param schema: the csv schema of the data to validate
+        :param df: df to validate
         :param validation_schema: schema to validate the data 
-        :return: boolean, true if validated
+        :return: list with errors info
         """
 
         # validate the data
-        df = pd.DataFrame([data], columns=schema)
         errors = validation_schema.validate(df)
+        errors = [[error.row, error.column, error.value] for error in errors]
 
-        validated = len(errors) == 0
+        return errors
 
-        return validated
     
     @staticmethod
     def integrate(data, schema, integration_conf, zones):
@@ -88,12 +85,11 @@ class Row():
                             # find possible match for the point
                             pnt = Point(long,lat)
                             possible_matches = list(rtree.intersection(pnt.bounds))
-                            t_data[column] = possible_matches
 
                             # find the right zone
                             for m in possible_matches:
                                 if zones.iloc[m].geometry.contains(pnt):
-                                    t_data[column] = m+1
+                                    t_data[column] = m
                             found=True
 
             # if there is no valid alias add empty data
