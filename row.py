@@ -27,13 +27,16 @@ class Row():
 
     
     @staticmethod
-    def integrate(data, schema, integration_conf, zones):
+    def integrate(data, schema, integration_conf, params_f):
 
         """
         Transforms data into the desired schema 
         by following the configuration
 
+        :param data: list of original data
+        :param schema: schema of original data
         :param integration_conf: dict with the configuration
+        :param params_f: additional parameters for functions of columns
         """
 
         data = dict(zip(schema, data))
@@ -81,7 +84,7 @@ class Row():
                             long = float(params[0])
                             lat = float(params[1])
                             
-                            rtree = zones.sindex
+                            rtree = params_f.sindex
                             # find possible match for the point
                             pnt = Point(long,lat)
                             possible_matches = list(rtree.intersection(pnt.bounds))
@@ -114,29 +117,3 @@ class Row():
         
         return data
 
-
-    @staticmethod
-    def read_rows(lines, begin, latest, path):
-
-        """
-        Construct row Objects from a tuple
-        (path, (*rows))
-
-        :param file: tuple (path, (*rows))
-        :return: a list of Row object
-        """
-
-        filename = os.path.basename(path)
-        dataset = filename.split('_', 1)[0]
-
-        rows = []
-
-        # read schema (first line of the file)
-        schema = lines[0]
-        lines = lines[1:]
-
-        for line in lines[begin:latest]:
-            row = Row(schema, line, filename, dataset)
-            rows.append(row)
-
-        return rows
